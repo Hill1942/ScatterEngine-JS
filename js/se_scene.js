@@ -8,7 +8,7 @@
 			this.w = arg.w || 320;
 			this.h = arg.h || 200;
 			this.color = arg.color || "black";
-			this.holder = $("<div></div>");
+			this.holder = $("<div id='scene_" + this.name + "' style='position:absolute;'></div>");
 			this.canvas = $("<canvas></canvas>");
 			this.ctx = this.canvas[0].getContext("2d");
 			this.setPosition();
@@ -19,8 +19,8 @@
 			this.listeners = [];
 		},
 		setPosition: function(x, y) {
-			this.x = x;
-			this.y = y;
+			this.x = x || this.x;
+			this.y = y || this.y;
 			this.holder.css("left", this.x).css("top", this.y);
 		},
 		setSize: function(width, height) {
@@ -64,7 +64,7 @@
 			this.holder.remove();
 			this.canvas = this.holder = this.ctx = null;
 		}
-
-	}
-
+	});
+	
+	scene.SID = 0;
 })(window);
