@@ -2,7 +2,8 @@
 	var frameState = win.FrameState = {
 		maxFrame:     0,
 		minFrame:     0,
-		currentFrame: 0,		lastTime:     0,
+		currentFrame: 0,		
+		lastTime:     0,
 		frames:       0,
 
 		start: function() {
