@@ -34,6 +34,45 @@ var b_search_no_recursion = function(array, key) {
     return -1;
 };
 
+var find_most_word = function(str) {
+    var words = str.split(/\s+/);
+    var diff_words = [];
+
+    diff_words.push({
+        word: words[0],
+        num:  1
+    });
+
+    for (var i = 1; i < words.length; i++) {
+        for (var j = 0; j < diff_words.length; j++) {
+            if (words[i] == diff_words[j].word) {
+                diff_words[j].num++;
+                break;
+            }
+            if (j == diff_words.length - 1) {
+                diff_words.push({
+                    word: words[i],
+                    num: 1
+                });
+            }
+        }
+    }
+    var target = diff_words[0];
+    for (var k = 1; k < diff_words.length; k++) {
+        if (diff_words[k].num > target.num) {
+            target = diff_words[k];
+        }
+    }
+    return target.word;
+};
+
+var str = "yang kai kai kai di di di di test test test test test haha haha";
+console.log(find_most_word(str));
+
+
+
+
+
 
 
 
