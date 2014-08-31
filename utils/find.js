@@ -66,8 +66,6 @@ var find_most_word = function(str) {
     return target.word;
 };
 
-var str = "yang kai kai kai di di di di test test test test test haha haha";
-console.log(find_most_word(str));
 
 
 
