@@ -1,0 +1,127 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>use BFS to find path...</title>
+</head>
+
+<body style="margin:0px">
+<script>
+    var w=30,h=20;
+    var flag = 1;
+    var closedArray = [];
+    var openArray = [];
+    var p_start = { x: 0, y: 0 };
+    var p_end   = { x: 0, y: 0 };
+
+    var end;
+
+    function getRound(pos) {
+        var array = [];
+        array[0] = { x: pos.x - 1, y: pos.y - 1 };
+        array[1] = { x: pos.x,     y: pos.y - 1 };
+        array[2] = { x: pos.x + 1, y: pos.y - 1 };
+        array[3] = { x: pos.x - 1, y: pos.y };
+        array[4] = { x: pos.x + 1, y: pos.y };
+        array[5] = { x: pos.x - 1, y: pos.y + 1 };
+        array[6] = { x: pos.x,     y: pos.y + 1 };
+        array[7] = { x: pos.x + 1, y: pos.y + 1 };
+        return array;
+    }
+
+
+
+
+    function IsStart(arr){
+        if(arr[0] == p_start[0] && arr[1] == p_start[1])
+            return true;
+        return false;
+    }
+
+    function IsOutScreen(pos){
+        if (pos.x < 0 || pos.y < 0|| pos.x > (w-1 )|| pos.y > (h-1)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function isClosed(pos) {
+        for (var i = 0; i < closedArray.length; i++) {
+            if (pos.x == closedArray[i].x && pos.y == closedArray[i].y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function find(next){
+        closedArray.push(next);
+        var round = getRound(next);
+        for (var i = 0; i < 8; i++) {
+            if (isClosed(round[i]) || IsOutScreen(round[i])) {
+                console.log("pass");
+                continue;
+            }
+            round[i].p = next;
+            if (round[i].x == p_end.x && round[i].y == p_end.y) {
+                end = round[i];
+                showResult();
+                return;
+            } else {
+                closedArray.push(round[i]);
+                map.rows[round[i].y].cells[round[i].x].style.backgroundColor = "#ffff00";
+            }
+        }
+        setTimeout(function() {
+            find(closedArray.shift());
+        }, 100);
+
+    }
+
+    function showResult() {
+        var node = end;
+        while (node.p != undefined) {
+            map.rows[node.p.y].cells[node.p.x].style.backgroundColor="#00ff00";
+            node = node.p;
+        }
+    }
+
+    function set(id, arr){
+        switch(id){
+            case 1:
+                p_start = arr;
+                map.rows[arr.y].cells[arr.x].style.backgroundColor="#ff0000";
+                break;
+            case 2:
+                p_end = arr;
+                map.rows[arr.y].cells[arr.x].style.backgroundColor="#0000ff";
+                break;
+            case 3:
+                n_path += arr.join(",")+";";
+                map.rows[arr.y].cells[arr.x].style.backgroundColor="#cccccc";
+                break;
+            default:
+                break;
+        }
+    }
+    function setflag(id) {
+        flag = id;
+    }
+</script>
+<table id="map" cellspacing="1" cellpadding="0" border="0" bgcolor="#000000">
+    <script>
+        for(var i=0;i< h;i++){
+            document.write("<tr>");
+            for(var j=0; j< w; j++){
+                document.write('<td onclick="set(flag,{x: ' + j + ', y: '+ i + '});" bgcolor="#ffffff" width="20" height="20"></td>');
+            }
+            document.write("</tr>");
+        }
+    </script>
+</table>
+<a href="javascript:setflag(1);">设置起点</a><br>
+<a href='javascript:setflag(2);'>设置终点</a><br>
+<a href='javascript:setflag(3);'>设置障碍点</a><br>
+<input type="button" onclick="find(p_start);this.disabled=true;" value="find">
+</body>
+</html>
