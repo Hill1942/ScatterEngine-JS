@@ -72,7 +72,7 @@
 			}
 		}
 
-		if (typeof this.hide != "function") {
+		if (typeof this.hide != "function") {n
 			game.prototype.hide = function () {
 				this.holder.hide();
 			}
