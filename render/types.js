@@ -21,7 +21,7 @@
             return this.x * this.x + this.y * this.y + this.z * this.z;
         },
         normailize: function() {
-            var inv = 1 / this.Length;
+            var inv = 1 / this.Length();
             return new vector3(this.x * inv, this.y * inv, this.z * inv);
         },
         negate: function() {
@@ -120,7 +120,7 @@
         },
         generateRay: function(x, y) {
             var r = this.right.multiply((x - 0.5) * this.fovScale);
-            var u = this.up.multiply((y - 0.5)) * this.fovScale;
+            var u = this.up.multiply((y - 0.5) * this.fovScale);
             return new ray3(this.eye, this.front.add(r).add(u).normailize());
         }
     }
