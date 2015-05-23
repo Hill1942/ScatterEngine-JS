@@ -1,0 +1,107 @@
+﻿<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <title>Index</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+        .left {
+            float: left;
+        }
+        .tabBtn {
+            float: left;
+            border: none;
+            background-color: #FF6565;
+            margin-right: 10px;
+            font-size: 14px;
+            color: #FFFFFF;
+            height: 30px;
+            width: 72px;
+            outline: none;
+            cursor: pointer;
+        }
+        .btnRow {
+            height: 30px;
+        }
+        #container {
+            width: 1210px;
+            margin-top: 36px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #header-c {
+            height: 60px;
+            background-color: #03a2ff;
+        }
+        #header {
+            width: 1210px;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 36px;
+            font-family: monospace;
+            color: #ffffff;
+            padding: 9px 0;
+        }
+        #mapArea {
+
+        }
+        #ctrlArea {
+            margin-left: 30px;
+        }
+        #speedText {
+            height: 30px;
+            border: 1px solid #FF6565;
+            outline: none;
+            padding: 5px;
+            width: 82px;
+            text-align: center;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header-c">
+        <div id="header">
+            Path Finding
+        </div>
+    </div>
+    <div id="container">
+        <div class="left" id="mapArea">
+            <table id="map" cellspacing="1" cellpadding="0" border="0" bgcolor="#000000"></table>
+        </div>
+        <div class="left" id="ctrlArea">
+            <h3>Method</h3>
+            <div class="btnRow">
+                <button class="tabBtn" id="astar">A Star</button>
+                <button class="tabBtn" id="bfs">BFS</button>
+                <button class="tabBtn" id="dfs">DFS</button>
+            </div>
+            <h3>Setting</h3>
+            <div class="btnRow">
+                <button class="tabBtn" id="setStartBtn">Origin</button>
+                <button class="tabBtn" id="setObstacleBtn">Obstacle</button>
+                <button class="tabBtn" id="setEndBtn">Terminal</button>
+            </div>
+            <h3>Control</h3>
+            <div class="btnRow">
+                <div class="left">
+                    <input class="left" type="text" id="speedText" placeholder="speed"/>
+                    <button class="left tabBtn" id="startBtn">Start</button>
+                </div>
+                <button class="left tabBtn" id="resetBtn">Reset</button>
+            </div>
+
+        </div>
+    </div>
+    <script type="text/javascript">
+        (function () {
+            window.$ = function (id) {
+                return document.getElementById(id);
+            }
+        })();
+    </script>
+    <script type="text/javascript" src="road-find.js"></script>
+</body>
+</html>
