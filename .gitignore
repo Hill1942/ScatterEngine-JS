@@ -2,6 +2,8 @@ Properties/
 obj/
 bin/
 
+.idea
+
 *.config
 *.csproj
 *.csproj.user
