@@ -27,6 +27,9 @@
     var gridType       = GRID_TYPE.Start  // origin point
     var isMapMouseDown = false
 
+    var gridWidth      = 50
+    var gridHeight     = 35
+
     var startPoint = {
         x: 0,
         y: 0,
@@ -40,6 +43,16 @@
     var obstacles  = []
     var openTable  = []
     var closeTable = []
+
+    function shuffle(a) {
+        var j, x, i
+        for (i = a.length; i > 0; i--) {
+            j = Math.floor(Math.random() * i)
+            x = a[i - 1]
+            a[i - 1] = a[j]
+            a[j] = x
+        }
+    }
 
     function resetBtnClicker() {
         obstacles  = []
@@ -56,16 +69,32 @@
 
     function getRoundPoints(x, y) {
         var array = [];
-        array.push({ x: x - 1, y: y - 1 })
-        array.push({ x: x    , y: y - 1 })
-        array.push({ x: x + 1, y: y - 1 })
-        array.push({ x: x - 1, y: y })
-        array.push({ x: x + 1, y: y })
-        array.push({ x: x - 1, y: y + 1 })
-        array.push({ x: x    , y: y + 1 })
-        array.push({ x: x + 1, y: y + 1 })
+
+        function myPush(x, y) {
+            if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight) {
+                return
+            }
+
+            array.push({ x: x, y: y})
+        }
+
+        //myPush(x, y)
+        myPush(x - 1,  y - 1)
+        myPush(x    ,  y - 1)
+        myPush(x + 1,  y - 1)
+        myPush(x - 1,  y)
+        myPush(x + 1,  y)
+        myPush(x - 1,  y + 1)
+        myPush(x    ,  y + 1)
+        myPush(x + 1,  y + 1)
+
+        shuffle(array)
 
         return array
+    }
+
+    function getRandPoint(arr) {
+
     }
 
     function isInOpenTable(x, y) {
@@ -145,12 +174,33 @@
     }
 
     function findRoad() {
-        openTable.push(startPoint)
-        astar_find()
+        switch (methodID) {
+            case 0:   //astar
+                openTable.push(startPoint)
+                astar_find()
+                break
+            case 1:   //bfs
+                closeTable.push(startPoint)
+                bfs_find(startPoint)
+                methodID = 1
+                break
+            case 2:    //dfs
+                methodID = 2
+                break
+        }
+
+
+
+    }
+
+    function geneRoad() {
         var grid = closeTable[closeTable.length - 1].p
-        while (grid != null) {
+        while (grid != null ) {
             var x = grid.x
             var y = grid.y
+            if (x == startPoint.x && y == startPoint.y) {
+                return
+            }
             mapGrid.rows[y].cells[x].style.backgroundColor = "#00ffff"
             grid = getParentGrid(x, y)
         }
@@ -158,6 +208,7 @@
 
     function astar_find() {
         if (isInCloseTable(endPoint.x, endPoint.y)) {
+            geneRoad()
             return
         }
         var minF_point = openTable[0]
@@ -176,36 +227,96 @@
 
         var roundPoints = getRoundPoints(minF_point.x, minF_point.y)
         for (var k = 0; k < roundPoints.length; k++) {
-            if (isInCloseTable(roundPoints[k].x, roundPoints[k].y) || 
-                isInObstacles(roundPoints[k].x, roundPoints[k].y)) {
+            var currX = roundPoints[k].x;
+            var currY = roundPoints[k].y;
+            if (isInCloseTable(currX, currY) || isInObstacles(currX, currY)) {
                 continue
             }
-            if (isInOpenTable(roundPoints[k].x, roundPoints[k].y)) {
+            if (isInOpenTable(currX, currY)) {
                 var new_gValue = minF_point.g_value + 
-                    (Math.abs(minF_point.x - roundPoints[k].x) +
-                        Math.abs(minF_point.y - roundPoints[k].y) == 1 ?
+                    (Math.abs(minF_point.x - currX) +
+                        Math.abs(minF_point.y - currY) == 1 ?
                         minF_point.g_value + 10 : minF_point.g_value + 14)
                 if (new_gValue < roundPoints[k].g_value) {
                     roundPoints[k].p = minF_point
                 }
             } else {
-                var g = (Math.abs(minF_point.x - roundPoints[k].x) +
-                        Math.abs(minF_point.y - roundPoints[k].y)) == 1 ?
+                var g = (Math.abs(minF_point.x - currX) +
+                        Math.abs(minF_point.y - currY)) == 1 ?
                         minF_point.g_value + 10 : minF_point.g_value + 14
                 var h = (Math.abs(endPoint.x - startPoint.x) + 
                         Math.abs(endPoint.y - endPoint.y)) * 10
                 var f = g + h
                 openTable.push({
-                    x: roundPoints[k].x,
-                    y: roundPoints[k].y,
+                    x: currX,
+                    y: currY,
                     p: { x: minF_point.x, y: minF_point.y },
                     g_value: g,
                     h_value: h,
                     f_value: f
                 })
+                var currGrid = mapGrid.rows[currY].cells[currX];
+                if (currGrid) {
+                    if (currX == endPoint.x && currY == endPoint.y) {
+                        continue
+                    }
+                    currGrid.style.backgroundColor = "#ffff00"
+                }
             }
         }
-        astar_find()
+
+        setTimeout(function() {
+            astar_find()
+        }, parseInt(speedText.innerHTML))
+
+    }
+
+    function bfs_find(curr) {
+
+        /*var currPoint = openTable[Math.floor(Math.random() * openTable.length)]
+        closeTable.push(currPoint)
+        for (var j = 0; j < openTable.length; j++) {
+            if (openTable[j].x == currPoint.x &&
+                openTable[j].y == currPoint.y) {
+                openTable.splice(j, 1)
+            }
+        }*/
+
+        var roundPoints = getRoundPoints(curr.x, curr.y)
+        for (var k = 0; k < roundPoints.length; k++) {
+            var tmpX = roundPoints[k].x;
+            var tmpY = roundPoints[k].y;
+            if (isInCloseTable(tmpX, tmpY) || isInObstacles(tmpX, tmpY)) {
+                continue
+            }
+
+
+            if (tmpX == endPoint.x && tmpY == endPoint.y) {
+                geneRoad()
+                return
+            } else {
+                openTable.push({
+                    x: tmpX,
+                    y: tmpY,
+                    p: { x: curr.x, y: curr.y }
+                })
+                var currGrid = mapGrid.rows[tmpY].cells[tmpX]
+                if (currGrid) {
+                    if (tmpX == endPoint.x && tmpY == endPoint.y) {
+                        continue
+                    }
+                    currGrid.style.backgroundColor = "#ffff00"
+                }
+            }
+        }
+
+        var next = openTable.shift()
+        closeTable.push(next)
+
+
+        setTimeout(function() {
+            bfs_find(next)
+        }, parseInt(speedText.innerHTML))
     }
 
     function createGrid(x, y, size) {
@@ -236,6 +347,7 @@
         tdElement.onmousemove = function() {
             if (isMapMouseDown && gridType == GRID_TYPE.Obstacle) {
                 this.style.backgroundColor = "#999999"
+                obstacles.push({ x: this.getAttribute("x"), y: this.getAttribute("y") })
             }
         }
 
@@ -269,7 +381,7 @@
             mapGrid.onmouseup      = function() { isMapMouseDown = false }
         },
         run: function () {
-            this.createMap(50, 35, 15)
+            this.createMap(gridWidth, gridHeight, 15)
             this.initState()
             this.regEvent()
         }
