@@ -54,6 +54,10 @@
         }
     }
 
+    function uniqe_push(a, ele) {
+
+    }
+
     function resetBtnClicker() {
         obstacles  = []
         openTable  = []
@@ -182,10 +186,12 @@
             case 1:   //bfs
                 closeTable.push(startPoint)
                 bfs_find(startPoint)
-                methodID = 1
+                //methodID = 1
                 break
             case 2:    //dfs
-                methodID = 2
+                closeTable.push(startPoint)
+                dfs_find(startPoint)
+                //methodID = 2
                 break
         }
 
@@ -194,7 +200,7 @@
     }
 
     function geneRoad() {
-        var grid = closeTable[closeTable.length - 1].p
+        var grid = closeTable[closeTable.length - 1]
         while (grid != null ) {
             var x = grid.x
             var y = grid.y
@@ -202,7 +208,8 @@
                 return
             }
             mapGrid.rows[y].cells[x].style.backgroundColor = "#00ffff"
-            grid = getParentGrid(x, y)
+            //grid = getParentGrid(x, y)
+            grid = grid.p
         }
     }
 
@@ -272,24 +279,18 @@
     }
 
     function bfs_find(curr) {
-
-        /*var currPoint = openTable[Math.floor(Math.random() * openTable.length)]
-        closeTable.push(currPoint)
-        for (var j = 0; j < openTable.length; j++) {
-            if (openTable[j].x == currPoint.x &&
-                openTable[j].y == currPoint.y) {
-                openTable.splice(j, 1)
-            }
-        }*/
+        closeTable.push(curr);
+        if (curr.x != startPoint.x || curr.y != startPoint.y) {
+            mapGrid.rows[curr.y].cells[curr.x].style.backgroundColor = "#ffff00"
+        }
 
         var roundPoints = getRoundPoints(curr.x, curr.y)
         for (var k = 0; k < roundPoints.length; k++) {
             var tmpX = roundPoints[k].x;
             var tmpY = roundPoints[k].y;
-            if (isInCloseTable(tmpX, tmpY) || isInObstacles(tmpX, tmpY)) {
+            if (isInCloseTable(tmpX, tmpY) || isInOpenTable(tmpX, tmpY) || isInObstacles(tmpX, tmpY)) {
                 continue
             }
-
 
             if (tmpX == endPoint.x && tmpY == endPoint.y) {
                 geneRoad()
@@ -298,25 +299,63 @@
                 openTable.push({
                     x: tmpX,
                     y: tmpY,
-                    p: { x: curr.x, y: curr.y }
+                    p: curr
                 })
                 var currGrid = mapGrid.rows[tmpY].cells[tmpX]
                 if (currGrid) {
                     if (tmpX == endPoint.x && tmpY == endPoint.y) {
                         continue
                     }
-                    currGrid.style.backgroundColor = "#ffff00"
+                    currGrid.style.backgroundColor = "#00ff00"
                 }
             }
         }
 
         var next = openTable.shift()
-        closeTable.push(next)
-
 
         setTimeout(function() {
             bfs_find(next)
-        }, parseInt(speedText.innerHTML))
+        }, parseInt(speedText.value))
+    }
+
+    function dfs_find(curr) {
+        closeTable.push(curr);
+        if (curr.x != startPoint.x || curr.y != startPoint.y) {
+            mapGrid.rows[curr.y].cells[curr.x].style.backgroundColor = "#ffff00"
+        }
+
+        var roundPoints = getRoundPoints(curr.x, curr.y)
+        for (var k = 0; k < roundPoints.length; k++) {
+            var tmpX = roundPoints[k].x;
+            var tmpY = roundPoints[k].y;
+            if (isInCloseTable(tmpX, tmpY) || isInOpenTable(tmpX, tmpY) || isInObstacles(tmpX, tmpY)) {
+                continue
+            }
+
+            if (tmpX == endPoint.x && tmpY == endPoint.y) {
+                geneRoad()
+                return
+            } else {
+                openTable.push({
+                    x: tmpX,
+                    y: tmpY,
+                    p: curr
+                })
+                var currGrid = mapGrid.rows[tmpY].cells[tmpX]
+                if (currGrid) {
+                    if (tmpX == endPoint.x && tmpY == endPoint.y) {
+                        continue
+                    }
+                    currGrid.style.backgroundColor = "#00ff00"
+                }
+            }
+        }
+
+        var next = openTable.pop()
+
+        setTimeout(function() {
+            dfs_find(next)
+        }, parseInt(speedText.value))
     }
 
     function createGrid(x, y, size) {
