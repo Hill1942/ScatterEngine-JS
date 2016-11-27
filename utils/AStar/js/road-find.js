@@ -70,23 +70,44 @@
     function getRoundPoints(x, y) {
         var array = [];
 
-        function myPush(x, y) {
+        function myPush(x, y, check, type) {
             if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight) {
                 return
+            }
+
+            if (check) {
+                switch (type) {
+                    case 1:
+                        if (isInOpenTable(x, y + 1) || isInObstacles(x + 1, y))
+                            return
+                        break
+                    case 2:
+                        if (isInOpenTable(x - 1, y) || isInObstacles(x, y + 1))
+                            return
+                        break
+                    case 3:
+                        if (isInOpenTable(x, y - 1) || isInObstacles(x + 1, y))
+                            return
+                        break
+                    case 4:
+                        if (isInOpenTable(x - 1, y) || isInObstacles(x, y - 1))
+                            return
+                        break
+                }
             }
 
             array.push({ x: x, y: y})
         }
 
         //myPush(x, y)
-        myPush(x - 1,  y - 1)
+        myPush(x - 1,  y - 1, true, 1)
         myPush(x    ,  y - 1)
-        myPush(x + 1,  y - 1)
+        myPush(x + 1,  y - 1, true, 2)
         myPush(x - 1,  y)
         myPush(x + 1,  y)
-        myPush(x - 1,  y + 1)
+        myPush(x - 1,  y + 1, true, 3)
         myPush(x    ,  y + 1)
-        myPush(x + 1,  y + 1)
+        myPush(x + 1,  y + 1, true, 4)
 
         shuffle(array)
 
@@ -160,6 +181,13 @@
     }
 
     function findRoad() {
+        for (var i = 0; i < gridHeight; i++) {
+            for (var j = 0; j < gridWidth; j++) {
+                if (mapGrid.rows[i].cells[j].style.backgroundColor.toString() == "rgb(153, 153, 153)") {
+                    obstacles.push({ x: j, y: i })
+                }
+            }
+        }
         switch (methodID) {
             case 0:   //astar
                 openTable.push(startPoint)
@@ -373,7 +401,7 @@
         tdElement.onmousemove = function() {
             if (isMapMouseDown && gridType == GRID_TYPE.Obstacle) {
                 this.style.backgroundColor = "#999999"
-                obstacles.push({ x: this.getAttribute("x"), y: this.getAttribute("y") })
+                //obstacles.push({ x: this.getAttribute("x"), y: this.getAttribute("y") })
             }
         }
 
