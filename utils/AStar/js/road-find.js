@@ -97,10 +97,6 @@
         return array
     }
 
-    function getRandPoint(arr) {
-
-    }
-
     function isInOpenTable(x, y) {
         for (var i = 0; i < openTable.length; i++) {
             if (openTable[i].x == x &&
@@ -167,16 +163,6 @@
         }
     }
 
-    function getParentGrid(x, y) {
-        for (var i = 0; i < closeTable.length; i++) {
-            if (closeTable[i].x == x &&
-                closeTable[i].y == y) {
-                return closeTable[i].p
-            }
-        }
-        return null
-    }
-
     function findRoad() {
         switch (methodID) {
             case 0:   //astar
@@ -228,7 +214,7 @@
             }
         }
         closeTable.push(minF_point)
-        console.log("mf: (" + minF_point.x + ", " + minF_point.y + ")" + ", and f: " + minF_point.f_value)
+        //console.log("mf: (" + minF_point.x + ", " + minF_point.y + ")" + ", and f: " + minF_point.f_value)
         for (var j = 0; j < openTable.length; j++) {
             if (openTable[j].x == minF_point.x && openTable[j].y == minF_point.y) {
                 if ( (minF_point.x == startPoint.x && minF_point.y == startPoint.y) ||
