@@ -54,10 +54,6 @@
         }
     }
 
-    function uniqe_push(a, ele) {
-
-    }
-
     function resetBtnClicker() {
         obstacles  = []
         openTable  = []
