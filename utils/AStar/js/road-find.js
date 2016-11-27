@@ -201,6 +201,9 @@
 
     function geneRoad() {
         var grid = closeTable[closeTable.length - 1]
+        if (methodID == 0) {
+            grid = closeTable[closeTable.length - 1].p
+        }
         while (grid != null ) {
             var x = grid.x
             var y = grid.y
@@ -225,9 +228,14 @@
             }
         }
         closeTable.push(minF_point)
+        console.log("mf: (" + minF_point.x + ", " + minF_point.y + ")" + ", and f: " + minF_point.f_value)
         for (var j = 0; j < openTable.length; j++) {
-            if (openTable[j].x == minF_point.x &&
-                openTable[j].y == minF_point.y) {
+            if (openTable[j].x == minF_point.x && openTable[j].y == minF_point.y) {
+                if ( (minF_point.x == startPoint.x && minF_point.y == startPoint.y) ||
+                     (minF_point.x == endPoint.x && minF_point.y == endPoint.y)) {
+                } else {
+                    mapGrid.rows[minF_point.y].cells[minF_point.x].style.backgroundColor = "#ffff00"
+                }
                 openTable.splice(j, 1)
             }
         }
@@ -240,24 +248,21 @@
                 continue
             }
             if (isInOpenTable(currX, currY)) {
-                var new_gValue = minF_point.g_value + 
-                    (Math.abs(minF_point.x - currX) +
-                        Math.abs(minF_point.y - currY) == 1 ?
+                var new_gValue = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY) == 1 ?
                         minF_point.g_value + 10 : minF_point.g_value + 14)
                 if (new_gValue < roundPoints[k].g_value) {
                     roundPoints[k].p = minF_point
+                    console.log("hit")
                 }
             } else {
-                var g = (Math.abs(minF_point.x - currX) +
-                        Math.abs(minF_point.y - currY)) == 1 ?
+                var g = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY)) == 1 ?
                         minF_point.g_value + 10 : minF_point.g_value + 14
-                var h = (Math.abs(endPoint.x - startPoint.x) + 
-                        Math.abs(endPoint.y - endPoint.y)) * 10
+                var h = (Math.abs(endPoint.x - currX) + Math.abs(endPoint.y - currY)) * 10
                 var f = g + h
                 openTable.push({
                     x: currX,
                     y: currY,
-                    p: { x: minF_point.x, y: minF_point.y },
+                    p: minF_point,
                     g_value: g,
                     h_value: h,
                     f_value: f
@@ -267,14 +272,14 @@
                     if (currX == endPoint.x && currY == endPoint.y) {
                         continue
                     }
-                    currGrid.style.backgroundColor = "#ffff00"
+                    currGrid.style.backgroundColor = "#00ff00"
                 }
             }
         }
 
         setTimeout(function() {
             astar_find()
-        }, parseInt(speedText.innerHTML))
+        }, parseInt(speedText.value))
 
     }
 
