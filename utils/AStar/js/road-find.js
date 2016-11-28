@@ -28,7 +28,7 @@
     var isMapMouseDown = false
 
     var gridWidth      = 50
-    var gridHeight     = 35
+    var gridHeight     = 50
 
     var startPoint = {
         x: 0,
@@ -60,9 +60,12 @@
         closeTable = []
         startPoint = { x: 0, y: 0, p: null, g_value: 0 }
         endPoint   = { x: 0, y: 0 }
-        for (var i = 0; i < 35; i++) {
-            for (var j = 0; j < 50; j++) {
-                mapGrid.rows[i].cells[j].style.backgroundColor = "#ffffff";
+        for (var i = 0; i < gridHeight; i++) {
+            for (var j = 0; j < gridWidth; j++) {
+                var grid = mapGrid.rows[i].cells[j];
+                if (grid.style.backgroundColor.toString() != "rgb(153, 153, 153)") {
+                    grid.style.backgroundColor = "#ffffff"
+                }
             }
         }
     }
@@ -78,19 +81,19 @@
             if (check) {
                 switch (type) {
                     case 1:
-                        if (isInOpenTable(x, y + 1) || isInObstacles(x + 1, y))
+                        if (isInObstacles(x, y + 1) || isInObstacles(x + 1, y))
                             return
                         break
                     case 2:
-                        if (isInOpenTable(x - 1, y) || isInObstacles(x, y + 1))
+                        if (isInObstacles(x - 1, y) || isInObstacles(x, y + 1))
                             return
                         break
                     case 3:
-                        if (isInOpenTable(x, y - 1) || isInObstacles(x + 1, y))
+                        if (isInObstacles(x, y - 1) || isInObstacles(x + 1, y))
                             return
                         break
                     case 4:
-                        if (isInOpenTable(x - 1, y) || isInObstacles(x, y - 1))
+                        if (isInObstacles(x - 1, y) || isInObstacles(x, y - 1))
                             return
                         break
                 }
@@ -122,6 +125,22 @@
             }
         }
         return false
+    }
+
+    function isInOpenTableAndOut(x, y) {
+        for (var i = 0; i < openTable.length; i++) {
+            if (openTable[i].x == x &&
+                openTable[i].y == y) {
+                return {
+                    "result": true,
+                    "out": openTable[i]
+                }
+            }
+        }
+        return {
+            "result": false,
+            "out": null
+        }
     }
 
     function isInCloseTable(x, y) {
@@ -252,17 +271,20 @@
 
         var roundPoints = getRoundPoints(minF_point.x, minF_point.y)
         for (var k = 0; k < roundPoints.length; k++) {
-            var currX = roundPoints[k].x;
-            var currY = roundPoints[k].y;
+            var curr = roundPoints[k];
+            var currX = curr.x;
+            var currY = curr.y;
             if (isInCloseTable(currX, currY) || isInObstacles(currX, currY)) {
                 continue
             }
-            if (isInOpenTable(currX, currY)) {
+            var tmp = isInOpenTableAndOut(currX, currY)
+            if (tmp.result) {
                 var new_gValue = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY) == 1 ?
                         minF_point.g_value + 10 : minF_point.g_value + 14)
-                if (new_gValue < roundPoints[k].g_value) {
-                    roundPoints[k].p = minF_point
-                    console.log("hit")
+                if (new_gValue < tmp.out.g_value) {
+                    tmp.out.p = minF_point
+                    tmp.out.g_value = new_gValue
+                    tmp.out.f_value = new_gValue + tmp.out.h_value
                 }
             } else {
                 var g = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY)) == 1 ?
@@ -403,6 +425,13 @@
                 this.style.backgroundColor = "#999999"
                 //obstacles.push({ x: this.getAttribute("x"), y: this.getAttribute("y") })
             }
+        }
+
+        if (y == 0) {
+            tdElement.innerHTML = x;
+        }
+        if (x == 0) {
+            tdElement.innerHTML = y;
         }
 
         return tdElement
