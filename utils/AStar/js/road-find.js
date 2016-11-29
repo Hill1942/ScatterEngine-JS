@@ -6,10 +6,16 @@
 
 (function () {
 
-    var GRID_TYPE = {
+    var GRID_DRAW_TYPE = {
         "Start":    0,
         "Obstacle": 1,
         "End":      2
+    }
+    var GRID_TYPE = {
+        "Init":     0,
+        "Open":     0,
+        "Close":    1,
+        "Obstacle": 3
     }
 
     var mapGrid        = $("map")
@@ -24,7 +30,7 @@
     var resetBtn       = $("resetBtn")
 
     var methodID       = 0  // a star
-    var gridType       = GRID_TYPE.Start  // origin point
+    var gridDrawType       = GRID_DRAW_TYPE.Start  // origin point
     var isMapMouseDown = false
 
     var gridWidth      = 50
@@ -65,6 +71,7 @@
                 var grid = mapGrid.rows[i].cells[j];
                 if (grid.style.backgroundColor.toString() != "rgb(153, 153, 153)") {
                     grid.style.backgroundColor = "#ffffff"
+                    grid.setAttribute("type", "3")
                 }
             }
         }
@@ -99,10 +106,9 @@
                 }
             }
 
-            array.push({ x: x, y: y})
+            array.push(mapGrid.rows[y].cells[x])
         }
 
-        //myPush(x, y)
         myPush(x - 1,  y - 1, true, 1)
         myPush(x    ,  y - 1)
         myPush(x + 1,  y - 1, true, 2)
@@ -118,49 +124,15 @@
     }
 
     function isInOpenTable(x, y) {
-        for (var i = 0; i < openTable.length; i++) {
-            if (openTable[i].x == x &&
-                openTable[i].y == y) {
-                return true
-            }
-        }
-        return false
-    }
-
-    function isInOpenTableAndOut(x, y) {
-        for (var i = 0; i < openTable.length; i++) {
-            if (openTable[i].x == x &&
-                openTable[i].y == y) {
-                return {
-                    "result": true,
-                    "out": openTable[i]
-                }
-            }
-        }
-        return {
-            "result": false,
-            "out": null
-        }
+        return mapGrid.rows[y].cells[x].getAttribute("type") == "1"
     }
 
     function isInCloseTable(x, y) {
-        for (var i = 0; i < closeTable.length; i++) {
-            if (closeTable[i].x == x &&
-                closeTable[i].y == y) {
-                return true
-            }
-        }
-        return false
+        return mapGrid.rows[y].cells[x].getAttribute("type") == "2"
     }
 
     function isInObstacles(x, y) {
-        for (var i = 0; i < obstacles.length; i++) {
-            if (obstacles[i].x == x &&
-                obstacles[i].y == y) {
-                return true
-            }
-        }
-        return false
+        return mapGrid.rows[y].cells[x].getAttribute("type") == "3"
     }
 
     function setGridBtnClicker() {
@@ -170,13 +142,13 @@
         this.style.backgroundColor           = "#FF6565"
         switch (this.id) {
             case "setStartBtn":
-                gridType = GRID_TYPE.Start
+                gridDrawType = GRID_DRAW_TYPE.Start
                 break
             case "setObstacleBtn":
-                gridType = GRID_TYPE.Obstacle
+                gridDrawType = GRID_DRAW_TYPE.Obstacle
                 break
             case "setEndBtn":
-                gridType = GRID_TYPE.End
+                gridDrawType = GRID_DRAW_TYPE.End
                 break
         }
     }
@@ -209,6 +181,9 @@
         }
         switch (methodID) {
             case 0:   //astar
+                startPoint.h_value = (Math.abs(endPoint.x - startPoint.x) + Math.abs(endPoint.y - startPoint.y)) * 10
+                startPoint.f_value = startPoint.h_value + startPoint.g_value
+                startPoint.setAttribute("type", "1")
                 openTable.push(startPoint)
                 astar_find()
                 break
@@ -257,7 +232,7 @@
             }
         }
         closeTable.push(minF_point)
-        //console.log("mf: (" + minF_point.x + ", " + minF_point.y + ")" + ", and f: " + minF_point.f_value)
+        minF_point.setAttribute("type", "2")
         for (var j = 0; j < openTable.length; j++) {
             if (openTable[j].x == minF_point.x && openTable[j].y == minF_point.y) {
                 if ( (minF_point.x == startPoint.x && minF_point.y == startPoint.y) ||
@@ -272,39 +247,36 @@
         var roundPoints = getRoundPoints(minF_point.x, minF_point.y)
         for (var k = 0; k < roundPoints.length; k++) {
             var curr = roundPoints[k];
-            var currX = curr.x;
-            var currY = curr.y;
-            if (isInCloseTable(currX, currY) || isInObstacles(currX, currY)) {
-                continue
-            }
-            var tmp = isInOpenTableAndOut(currX, currY)
-            if (tmp.result) {
-                var new_gValue = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY) == 1 ?
-                        minF_point.g_value + 10 : minF_point.g_value + 14)
-                if (new_gValue < tmp.out.g_value) {
-                    tmp.out.p = minF_point
-                    tmp.out.g_value = new_gValue
-                    tmp.out.f_value = new_gValue + tmp.out.h_value
+            if (curr) {
+                var currX = curr.x;
+                var currY = curr.y;
+                if (curr.getAttribute("type") == "2" || curr.getAttribute("type") == "3") {
+                    continue
                 }
-            } else {
-                var g = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY)) == 1 ?
-                        minF_point.g_value + 10 : minF_point.g_value + 14
-                var h = (Math.abs(endPoint.x - currX) + Math.abs(endPoint.y - currY)) * 10
-                var f = g + h
-                openTable.push({
-                    x: currX,
-                    y: currY,
-                    p: minF_point,
-                    g_value: g,
-                    h_value: h,
-                    f_value: f
-                })
-                var currGrid = mapGrid.rows[currY].cells[currX];
-                if (currGrid) {
+                if (curr.getAttribute("type") == "1") {  //in open table
+                    var new_gValue = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY) == 1 ?
+                    minF_point.g_value + 10 : minF_point.g_value + 14)
+                    if (new_gValue < curr.g_value) {
+                        curr.p = minF_point
+                        curr.g_value = new_gValue
+                        curr.f_value = new_gValue + curr.h_value
+                    }
+                } else {
+                    var g = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY)) == 1 ?
+                            minF_point.g_value + 10 : minF_point.g_value + 14
+                    var h = (Math.abs(endPoint.x - currX) + Math.abs(endPoint.y - currY)) * 10
+                    var f = g + h
+                    curr.p = minF_point
+                    curr.setAttribute("type", "1")
+                    curr.setAttribute("g_value", g)
+                    curr.setAttribute("h_value", h)
+                    curr.setAttribute("f_value", f)
+                    openTable.push(curr)
                     if (currX == endPoint.x && currY == endPoint.y) {
                         continue
                     }
-                    currGrid.style.backgroundColor = "#00ff00"
+                    curr.style.backgroundColor = "#00ff00"
+
                 }
             }
         }
@@ -312,7 +284,6 @@
         setTimeout(function() {
             astar_find()
         }, parseInt(speedText.value))
-
     }
 
     function bfs_find(curr) {
@@ -402,18 +373,19 @@
         tdElement.height  = size
         tdElement.setAttribute("x", x)
         tdElement.setAttribute("y", y)
+        tdElement.setAttribute("type", "0")  // 0 for nothing, 1 for open, 2 for close, 3 for obstacle
         tdElement.onclick = function() {
-            switch (gridType) {
-                case GRID_TYPE.Start:
+            switch (gridDrawType) {
+                case GRID_DRAW_TYPE.Start:
                     this.style.backgroundColor = "#ff0000"
                     startPoint.x = x
                     startPoint.y = y
                     break
-                case GRID_TYPE.Obstacle:
+                case GRID_DRAW_TYPE.Obstacle:
                     this.style.backgroundColor = "#999999"
 
                     break
-                case GRID_TYPE.End:
+                case GRID_DRAW_TYPE.End:
                     this.style.backgroundColor = "#0000ff"
                     endPoint.x = x
                     endPoint.y = y
@@ -421,17 +393,17 @@
             }
         }
         tdElement.onmousemove = function() {
-            if (isMapMouseDown && gridType == GRID_TYPE.Obstacle) {
+            if (isMapMouseDown && gridDrawType == GRID_DRAW_TYPE.Obstacle) {
                 this.style.backgroundColor = "#999999"
                 //obstacles.push({ x: this.getAttribute("x"), y: this.getAttribute("y") })
             }
         }
 
         if (y == 0) {
-            tdElement.innerHTML = x;
+            tdElement.innerHTML = x
         }
         if (x == 0) {
-            tdElement.innerHTML = y;
+            tdElement.innerHTML = y
         }
 
         return tdElement
