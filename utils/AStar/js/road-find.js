@@ -13,8 +13,8 @@
     }
     var GRID_TYPE = {
         "Init":     0,
-        "Open":     0,
-        "Close":    1,
+        "Open":     1,
+        "Close":    2,
         "Obstacle": 3
     }
 
@@ -30,25 +30,24 @@
     var resetBtn       = $("resetBtn")
 
     var methodID       = 0  // a star
-    var gridDrawType       = GRID_DRAW_TYPE.Start  // origin point
+    var gridDrawType   = GRID_DRAW_TYPE.Start  // origin point
     var isMapMouseDown = false
 
     var gridWidth      = 50
     var gridHeight     = 50
 
-    var startPoint = {
-        x: 0,
-        y: 0,
-        p: null,
-        g_value: 0
-    }
-    var endPoint = {
-        x: 0,
-        y: 0
-    }
+    var startPoint
+    var endPoint
     var obstacles  = []
     var openTable  = []
     var closeTable = []
+
+    Element.prototype.gVal = function(prop) {
+        return parseInt(this.getAttribute(prop))
+    }
+    Element.prototype.sVal = function(prop, val) {
+        this.setAttribute(prop, val.toString())
+    }
 
     function shuffle(a) {
         var j, x, i
@@ -61,24 +60,37 @@
     }
 
     function resetBtnClicker() {
-        obstacles  = []
-        openTable  = []
-        closeTable = []
-        startPoint = { x: 0, y: 0, p: null, g_value: 0 }
-        endPoint   = { x: 0, y: 0 }
         for (var i = 0; i < gridHeight; i++) {
             for (var j = 0; j < gridWidth; j++) {
-                var grid = mapGrid.rows[i].cells[j];
+                var grid = mapGrid.rows[i].cells[j]
+                if (grid == startPoint || grid == endPoint) {
+                    continue
+                }
                 if (grid.style.backgroundColor.toString() != "rgb(153, 153, 153)") {
                     grid.style.backgroundColor = "#ffffff"
-                    grid.setAttribute("type", "3")
+                    grid.sVal("type", GRID_TYPE.Init)
                 }
             }
         }
+        obstacles  = []
+        openTable  = []
+        closeTable = []
+    }
+
+    function getHValue(pointA, pointB) {
+        return (Math.abs(pointA.gVal("x") - pointB.gVal("x")) + Math.abs(pointA.gVal("y") - pointB.gVal("y"))) * 10
+    }
+    function getGValue(from, to) {
+        return Math.abs(from.gVal("x") - to.gVal("x")) + Math.abs(from.gVal("y") - to.gVal("y")) == 1 ?
+            from.gVal("g_value") + 10 : from.gVal("g_value") + 14
     }
 
     function getRoundPoints(x, y) {
         var array = [];
+
+        function isObstacle(x, y) {
+            return mapGrid.rows[y].cells[x].gVal("type") == GRID_TYPE.Obstacle
+        }
 
         function myPush(x, y, check, type) {
             if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight) {
@@ -87,20 +99,20 @@
 
             if (check) {
                 switch (type) {
-                    case 1:
-                        if (isInObstacles(x, y + 1) || isInObstacles(x + 1, y))
+                    case 1:  //top - left
+                        if (isObstacle(x, y + 1) || isObstacle(x + 1, y))
                             return
                         break
-                    case 2:
-                        if (isInObstacles(x - 1, y) || isInObstacles(x, y + 1))
+                    case 2:  //top - right
+                        if (isObstacle(x - 1, y) || isObstacle(x, y + 1))
                             return
                         break
-                    case 3:
-                        if (isInObstacles(x, y - 1) || isInObstacles(x + 1, y))
+                    case 3:  //bottom - left
+                        if (isObstacle(x, y - 1) || isObstacle(x + 1, y))
                             return
                         break
-                    case 4:
-                        if (isInObstacles(x - 1, y) || isInObstacles(x, y - 1))
+                    case 4:  //bottom - right
+                        if (isObstacle(x - 1, y) || isObstacle(x, y - 1))
                             return
                         break
                 }
@@ -121,18 +133,6 @@
         shuffle(array)
 
         return array
-    }
-
-    function isInOpenTable(x, y) {
-        return mapGrid.rows[y].cells[x].getAttribute("type") == "1"
-    }
-
-    function isInCloseTable(x, y) {
-        return mapGrid.rows[y].cells[x].getAttribute("type") == "2"
-    }
-
-    function isInObstacles(x, y) {
-        return mapGrid.rows[y].cells[x].getAttribute("type") == "3"
     }
 
     function setGridBtnClicker() {
@@ -174,33 +174,38 @@
     function findRoad() {
         for (var i = 0; i < gridHeight; i++) {
             for (var j = 0; j < gridWidth; j++) {
-                if (mapGrid.rows[i].cells[j].style.backgroundColor.toString() == "rgb(153, 153, 153)") {
-                    obstacles.push({ x: j, y: i })
+                var currGrid = mapGrid.rows[i].cells[j]
+                if (currGrid.style.backgroundColor.toString() == "rgb(153, 153, 153)") {
+                    currGrid.sVal("type", GRID_TYPE.Obstacle)
+                    obstacles.push(currGrid)
                 }
             }
         }
         switch (methodID) {
             case 0:   //astar
-                startPoint.h_value = (Math.abs(endPoint.x - startPoint.x) + Math.abs(endPoint.y - startPoint.y)) * 10
-                startPoint.f_value = startPoint.h_value + startPoint.g_value
-                startPoint.setAttribute("type", "1")
+                startPoint.sVal("g_value", 0)
+                startPoint.sVal("h_value", getHValue(startPoint, endPoint))
+                startPoint.sVal("f_value", getHValue(startPoint, endPoint))
+                startPoint.sVal("type", GRID_TYPE.Open)
+                endPoint.sVal("g_value", 0)
+                endPoint.sVal("h_value", 0)
+                endPoint.sVal("f_value", 0)
+                endPoint.sVal("type", GRID_TYPE.Init)
+
                 openTable.push(startPoint)
                 astar_find()
                 break
             case 1:   //bfs
-                closeTable.push(startPoint)
+                startPoint.sVal("type", GRID_TYPE.Init)
+                endPoint.sVal("type", GRID_TYPE.Init)
                 bfs_find(startPoint)
-                //methodID = 1
                 break
             case 2:    //dfs
-                closeTable.push(startPoint)
+                startPoint.sVal("type", GRID_TYPE.Init)
+                endPoint.sVal("type", GRID_TYPE.Init)
                 dfs_find(startPoint)
-                //methodID = 2
                 break
         }
-
-
-
     }
 
     function geneRoad() {
@@ -209,70 +214,64 @@
             grid = closeTable[closeTable.length - 1].p
         }
         while (grid != null ) {
-            var x = grid.x
-            var y = grid.y
-            if (x == startPoint.x && y == startPoint.y) {
+            if (grid == startPoint) {
                 return
             }
-            mapGrid.rows[y].cells[x].style.backgroundColor = "#00ffff"
-            //grid = getParentGrid(x, y)
+            grid.style.backgroundColor = "#00ffff"
             grid = grid.p
         }
     }
 
     function astar_find() {
-        if (isInCloseTable(endPoint.x, endPoint.y)) {
+        if (endPoint.gVal("type") == GRID_TYPE.Close) {
             geneRoad()
             return
         }
         var minF_point = openTable[0]
         for (var i = 1; i < openTable.length; i++) {
-            if (openTable[i].f_value < minF_point.f_value) {
+            if (openTable[i].gVal("f_value") < minF_point.gVal("f_value")) {
                 minF_point = openTable[i]
             }
         }
-        closeTable.push(minF_point)
-        minF_point.setAttribute("type", "2")
         for (var j = 0; j < openTable.length; j++) {
-            if (openTable[j].x == minF_point.x && openTable[j].y == minF_point.y) {
-                if ( (minF_point.x == startPoint.x && minF_point.y == startPoint.y) ||
-                     (minF_point.x == endPoint.x && minF_point.y == endPoint.y)) {
-                } else {
-                    mapGrid.rows[minF_point.y].cells[minF_point.x].style.backgroundColor = "#ffff00"
-                }
+            if (openTable[j] == minF_point) {
                 openTable.splice(j, 1)
             }
         }
+        closeTable.push(minF_point)
+        minF_point.sVal("type", GRID_TYPE.Close)
+        if (minF_point != startPoint && minF_point != endPoint) {
+            minF_point.style.backgroundColor = "#ffff00"
+        }
 
-        var roundPoints = getRoundPoints(minF_point.x, minF_point.y)
+        var minFPointX = minF_point.gVal("x")
+        var minFPointY = minF_point.gVal("y")
+        var roundPoints = getRoundPoints(minFPointX, minFPointY)
         for (var k = 0; k < roundPoints.length; k++) {
             var curr = roundPoints[k];
             if (curr) {
-                var currX = curr.x;
-                var currY = curr.y;
-                if (curr.getAttribute("type") == "2" || curr.getAttribute("type") == "3") {
+                var currType = curr.gVal("type")
+                if (currType == GRID_TYPE.Close || currType == GRID_TYPE.Obstacle) {
                     continue
                 }
-                if (curr.getAttribute("type") == "1") {  //in open table
-                    var new_gValue = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY) == 1 ?
-                    minF_point.g_value + 10 : minF_point.g_value + 14)
-                    if (new_gValue < curr.g_value) {
+                if (currType == GRID_TYPE.Open) {  //in open table
+                    var new_gValue = getGValue(minF_point, curr)
+                    if (new_gValue < curr.gVal("g_value")) {
                         curr.p = minF_point
-                        curr.g_value = new_gValue
-                        curr.f_value = new_gValue + curr.h_value
+                        curr.sVal("g_value", new_gValue)
+                        curr.sVal("f_value", new_gValue + curr.gVal("h_value"))
                     }
                 } else {
-                    var g = (Math.abs(minF_point.x - currX) + Math.abs(minF_point.y - currY)) == 1 ?
-                            minF_point.g_value + 10 : minF_point.g_value + 14
-                    var h = (Math.abs(endPoint.x - currX) + Math.abs(endPoint.y - currY)) * 10
+                    var g = getGValue(minF_point, curr)
+                    var h = getHValue(curr, endPoint)
                     var f = g + h
                     curr.p = minF_point
-                    curr.setAttribute("type", "1")
-                    curr.setAttribute("g_value", g)
-                    curr.setAttribute("h_value", h)
-                    curr.setAttribute("f_value", f)
+                    curr.sVal("type", GRID_TYPE.Open)
+                    curr.sVal("g_value", g)
+                    curr.sVal("h_value", h)
+                    curr.sVal("f_value", f)
                     openTable.push(curr)
-                    if (currX == endPoint.x && currY == endPoint.y) {
+                    if (curr == endPoint) {
                         continue
                     }
                     curr.style.backgroundColor = "#00ff00"
@@ -288,37 +287,34 @@
 
     function bfs_find(curr) {
         closeTable.push(curr);
-        if (curr.x != startPoint.x || curr.y != startPoint.y) {
-            mapGrid.rows[curr.y].cells[curr.x].style.backgroundColor = "#ffff00"
+        curr.sVal("type", GRID_TYPE.Close)
+        if (curr != startPoint) {
+            curr.style.backgroundColor = "#ffff00"
         }
 
-        var roundPoints = getRoundPoints(curr.x, curr.y)
+        var roundPoints = getRoundPoints(curr.gVal("x"), curr.gVal("y"))
         for (var k = 0; k < roundPoints.length; k++) {
-            var tmpX = roundPoints[k].x;
-            var tmpY = roundPoints[k].y;
-            if (isInCloseTable(tmpX, tmpY) || isInOpenTable(tmpX, tmpY) || isInObstacles(tmpX, tmpY)) {
-                continue
-            }
+            var tmpGrid = roundPoints[k]
+            if (tmpGrid) {
+                var tmpType = tmpGrid.gVal("type")
+                if (tmpType == GRID_TYPE.Open || tmpType == GRID_TYPE.Close || tmpType == GRID_TYPE.Obstacle) {
+                    continue
+                }
 
-            if (tmpX == endPoint.x && tmpY == endPoint.y) {
-                geneRoad()
-                return
-            } else {
-                openTable.push({
-                    x: tmpX,
-                    y: tmpY,
-                    p: curr
-                })
-                var currGrid = mapGrid.rows[tmpY].cells[tmpX]
-                if (currGrid) {
-                    if (tmpX == endPoint.x && tmpY == endPoint.y) {
+                if (tmpGrid == endPoint) {
+                    geneRoad()
+                    return
+                } else {
+                    tmpGrid.p = curr
+                    tmpGrid.sVal("type", GRID_TYPE.Open)
+                    openTable.push(tmpGrid)
+                    if (tmpGrid == endPoint) {
                         continue
                     }
-                    currGrid.style.backgroundColor = "#00ff00"
+                    tmpGrid.style.backgroundColor = "#00ff00"
                 }
             }
         }
-
         var next = openTable.shift()
 
         setTimeout(function() {
@@ -328,37 +324,34 @@
 
     function dfs_find(curr) {
         closeTable.push(curr);
-        if (curr.x != startPoint.x || curr.y != startPoint.y) {
-            mapGrid.rows[curr.y].cells[curr.x].style.backgroundColor = "#ffff00"
+        curr.sVal("type", GRID_TYPE.Close)
+        if (curr != startPoint) {
+            curr.style.backgroundColor = "#ffff00"
         }
 
-        var roundPoints = getRoundPoints(curr.x, curr.y)
+        var roundPoints = getRoundPoints(curr.gVal("x"), curr.gVal("y"))
         for (var k = 0; k < roundPoints.length; k++) {
-            var tmpX = roundPoints[k].x;
-            var tmpY = roundPoints[k].y;
-            if (isInCloseTable(tmpX, tmpY) || isInOpenTable(tmpX, tmpY) || isInObstacles(tmpX, tmpY)) {
-                continue
-            }
+            var tmpGrid = roundPoints[k]
+            if (tmpGrid) {
+                var tmpType = tmpGrid.gVal("type")
+                if (tmpType == GRID_TYPE.Open || tmpType == GRID_TYPE.Close || tmpType == GRID_TYPE.Obstacle) {
+                    continue
+                }
 
-            if (tmpX == endPoint.x && tmpY == endPoint.y) {
-                geneRoad()
-                return
-            } else {
-                openTable.push({
-                    x: tmpX,
-                    y: tmpY,
-                    p: curr
-                })
-                var currGrid = mapGrid.rows[tmpY].cells[tmpX]
-                if (currGrid) {
-                    if (tmpX == endPoint.x && tmpY == endPoint.y) {
+                if (tmpGrid == endPoint) {
+                    geneRoad()
+                    return
+                } else {
+                    tmpGrid.p = curr
+                    tmpGrid.sVal("type", GRID_TYPE.Open)
+                    openTable.push(tmpGrid)
+                    if (tmpGrid == endPoint) {
                         continue
                     }
-                    currGrid.style.backgroundColor = "#00ff00"
+                    tmpGrid.style.backgroundColor = "#00ff00"
                 }
             }
         }
-
         var next = openTable.pop()
 
         setTimeout(function() {
@@ -371,15 +364,14 @@
         tdElement.bgColor = "#ffffff"
         tdElement.width   = size
         tdElement.height  = size
-        tdElement.setAttribute("x", x)
-        tdElement.setAttribute("y", y)
-        tdElement.setAttribute("type", "0")  // 0 for nothing, 1 for open, 2 for close, 3 for obstacle
+        tdElement.sVal("x", x)
+        tdElement.sVal("y", y)
+        tdElement.sVal("type", "0")  // 0 for nothing, 1 for open, 2 for close, 3 for obstacle
         tdElement.onclick = function() {
             switch (gridDrawType) {
                 case GRID_DRAW_TYPE.Start:
                     this.style.backgroundColor = "#ff0000"
-                    startPoint.x = x
-                    startPoint.y = y
+                    startPoint = this
                     break
                 case GRID_DRAW_TYPE.Obstacle:
                     this.style.backgroundColor = "#999999"
@@ -387,15 +379,13 @@
                     break
                 case GRID_DRAW_TYPE.End:
                     this.style.backgroundColor = "#0000ff"
-                    endPoint.x = x
-                    endPoint.y = y
+                    endPoint = this
                     break
             }
         }
         tdElement.onmousemove = function() {
             if (isMapMouseDown && gridDrawType == GRID_DRAW_TYPE.Obstacle) {
                 this.style.backgroundColor = "#999999"
-                //obstacles.push({ x: this.getAttribute("x"), y: this.getAttribute("y") })
             }
         }
 
