@@ -20,6 +20,7 @@
 
     var mapGrid        = $("map")
     var astarBtn       = $("astar")
+    var dijkstraBtn    = $("dijkstra")
     var bfsBtn         = $("bfs")
     var dfsBtn         = $("dfs")
     var setStartBtn    = $("setStartBtn")
@@ -157,6 +158,7 @@
         astarBtn.style.backgroundColor = "#999999"
         bfsBtn.style.backgroundColor   = "#999999"
         dfsBtn.style.backgroundColor   = "#999999"
+        dijkstraBtn.style.backgroundColor   = "#999999"
         this.style.backgroundColor     = "#FF6565"
         switch (this.id) {
             case "astar":
@@ -167,6 +169,9 @@
                 break
             case "dfs":
                 methodID = 2
+                break
+            case "dijkstra":
+                methodID = 3
                 break
         }
     }
@@ -204,6 +209,13 @@
                 startPoint.sVal("type", GRID_TYPE.Init)
                 endPoint.sVal("type", GRID_TYPE.Init)
                 dfs_find(startPoint)
+                break
+            case 3:    //dijkstra
+                startPoint.sVal("g_value", 0)
+                //endPoint.sVal("g_value", 0)
+                startPoint.sVal("type", GRID_TYPE.Init)
+                endPoint.sVal("type", GRID_TYPE.Init)
+                dijkstra_find(startPoint)
                 break
         }
     }
@@ -282,6 +294,53 @@
 
         setTimeout(function() {
             astar_find()
+        }, parseInt(speedText.value))
+    }
+
+    function dijkstra_find(curr) {
+        closeTable.push(curr);
+        curr.sVal("type", GRID_TYPE.Close)
+        if (curr != startPoint) {
+            curr.style.backgroundColor = "#ffff00"
+        }
+
+        var roundPoints = getRoundPoints(curr.gVal("x"), curr.gVal("y"))
+        for (var k = 0; k < roundPoints.length; k++) {
+            var tmpGrid = roundPoints[k]
+            if (tmpGrid) {
+                if (tmpGrid == endPoint) {
+                    geneRoad()
+                    return
+                }
+
+                var currType = tmpGrid.gVal("type")
+                if (currType == GRID_TYPE.Close || currType == GRID_TYPE.Obstacle) {
+                    continue
+                }
+                if (currType == GRID_TYPE.Open) {  //in open table
+                    var new_gValue = getGValue(curr, tmpGrid)
+                    if (new_gValue < tmpGrid.gVal("g_value")) {
+                        tmpGrid.p = curr
+                        tmpGrid.sVal("g_value", new_gValue)
+                    }
+                } else {
+                    var g = getGValue(curr, tmpGrid)
+                    tmpGrid.p = curr
+                    tmpGrid.sVal("type", GRID_TYPE.Open)
+                    tmpGrid.sVal("g_value", g)
+                    openTable.push(tmpGrid)
+                    if (tmpGrid == endPoint) {
+                        continue
+                    }
+                    tmpGrid.style.backgroundColor = "#00ff00"
+                }
+            }
+        }
+
+        var next = openTable.shift()
+
+        setTimeout(function() {
+            dijkstra_find(next)
         }, parseInt(speedText.value))
     }
 
@@ -375,6 +434,8 @@
                     break
                 case GRID_DRAW_TYPE.Obstacle:
                     this.style.backgroundColor = "#999999"
+                    /*this.sVal("type", GRID_TYPE.Obstacle)
+                    obstacles.push(this)*/
 
                     break
                 case GRID_DRAW_TYPE.End:
@@ -415,6 +476,7 @@
         },
         regEvent: function() {
             astarBtn.onclick       = methodBtnClicker
+            dijkstraBtn.onclick    = methodBtnClicker
             bfsBtn.onclick         = methodBtnClicker
             dfsBtn.onclick         = methodBtnClicker
             setStartBtn.onclick    = setGridBtnClicker
